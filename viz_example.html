@@ -74,7 +74,7 @@
 					<div id="main">
 						<div class="inner">
 							<h1><a href="index.html">Home</a> | <a href="about_me.html">About Me</a></h1>
-							<h1><i>Example Data Visualization</i></h1> 
+							<h1><i>Example Data Visualizations</i></h1> 
 							<!-- <span class="resize"><img src="images/cs50_maze_solving.gif" alt="" /></span> -->
 							<!-- <figcaption><i>Our algorithm solving an 8-player maze game.</i></figcaption> -->
 							<!-- <span class="image main"><img src="images/pic13.jpg" alt="" /></span> -->
@@ -108,11 +108,144 @@
 								}								  
 							  };
 							  vegaEmbed('#vis', yourVlSpec);
-							</script>
-							
+							</script>							
 							<figcaption><i>Source: <a href="https://data.cdc.gov/NCHS/Provisional-Death-Counts-for-Coronavirus-Disease-C/hc4f-j6nb">CDC</a>.</i></figcaption>
-
 							<p></p>
+
+							<div id="vis2"></div>
+							<script type="text/javascript">
+							  var yourVlSpec = { 
+								"$schema": "https://vega.github.io/schema/vega/v5.json",
+								"description": "A Dorling cartogram depicting U.S. coronavirus deaths.",
+								"width": 900,
+								"height": 520,
+								"autosize": "none",
+								
+								"config": {
+									"legend": {
+									"gradientDirection": "horizontal",
+									"gradientLength": 120,
+									"gradientThickness": 10
+									}
+								},
+								
+								"data": [
+									{
+									"name": "states",
+									"url": "data/us-10m.json",
+									"format": {"type": "topojson", "feature": "states"}
+									},
+									{
+									"name": "deaths",
+									"url": "data/covid_state_deaths.json",
+									"transform": [
+										{
+										"type": "lookup",
+										"from": "states", "key": "id",
+										"fields": ["id"], "as": ["geo"]
+										},
+										{
+										"type": "filter",
+										"expr": "datum.geo"
+										},
+										{
+										"type": "formula", "as": "centroid",
+										"expr": "geoCentroid('projection', datum.geo)"
+										}
+									]
+									}
+								],
+								
+								"projections": [
+									{
+									"name": "projection",
+									"type": "albersUsa",
+									"scale": 1100,
+									"translate": [{"signal": "width / 2"}, {"signal": "height / 2"}]
+									}
+								],
+								
+								"scales": [
+									{
+									"name": "size",
+									"domain": {"data": "deaths", "field": "deaths"},
+									"zero": false,
+									"range": [1000, 5000]
+									},
+									{
+									"name": "color",
+									"type": "linear",
+									"nice": true,
+									"domain": {"data": "deaths", "field": "deaths"},
+									"range": "ramp"
+									}
+								],
+								
+								"legends": [
+									{
+									"title": "COVID-19 Deaths",
+									"orient": "bottom-right",
+									"type": "symbol",
+									"size": "size",
+									"fill": "color",
+									"format": "N",
+									"clipHeight": 16
+									}
+								],
+								
+								"marks": [
+									{
+									"name": "circles",
+									"type": "symbol",
+									"from": {"data": "deaths"},
+									"encode": {
+										"enter": {
+										"size": {"scale": "size", "field": "deaths"},
+										"fill": {"scale": "color", "field": "deaths"},
+										"stroke": {"value": "white"},
+										"strokeWidth": {"value": 1.5},
+										"x": {"field": "centroid[0]"},
+										"y": {"field": "centroid[1]"},
+										"tooltip": {"signal": "'COVID-19 Deaths: ' + format(datum.deaths, 'N')"}
+										}
+									},
+									"transform": [
+										{
+										"type": "force",
+										"static": true,
+										"forces": [
+										{"force": "collide", "radius": {"expr": "1 + sqrt(datum.size) / 2"}},
+										{"force": "x", "x": "datum.centroid[0]"},
+										{"force": "y", "y": "datum.centroid[1]"}
+										]
+										}
+									]
+									},
+									{
+									"type": "text",
+									"interactive": false,
+									"from": {"data": "circles"},
+									"encode": {
+										"enter": {
+										"align": {"value": "center"},
+										"baseline": {"value": "middle"},
+										"fontSize": {"value": 13},
+										"fontWeight": {"value": "bold"},
+										"text": {"field": "datum.state"}
+										},
+										"update": {
+										"x": {"field": "x"},
+										"y": {"field": "y"}
+										}
+									}
+									}
+								]
+							  };
+							  vegaEmbed('#vis2', yourVlSpec);
+							</script>
+							<figcaption><i>Source: <a href="https://data.cdc.gov/NCHS/Provisional-Death-Counts-for-Coronavirus-Disease-C/hc4f-j6nb">CDC</a>.</i></figcaption>
+							<p></p>
+
 						</div>
 					</div>
 

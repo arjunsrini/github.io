@@ -1,23 +1,127 @@
 {
-  "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
-  "description": "A simple bar chart with embedded data.",
-  "data": {
-    "values": [
-      {"Date by Week": "2/1", "Deaths": 0},
-      {"Date by Week": "2/8", "Deaths": 0},
-      {"Date by Week": "2/15", "Deaths": 0},
-      {"Date by Week": "2/22", "Deaths": 0},
-      {"Date by Week": "2/29", "Deaths": 5},
-      {"Date by Week": "3/7", "Deaths": 18},
-      {"Date by Week": "3/14", "Deaths": 43},
-      {"Date by Week": "3/21", "Deaths": 385},
-      {"Date by Week": "3/28", "Deaths": 1406},
-      {"Date by Week": "4/4", "Deaths": 1450}
-    ]
+  "$schema": "https://vega.github.io/schema/vega/v5.json",
+  "description": "A Dorling cartogram depicting U.S. coronavirus deaths.",
+  "width": 900,
+  "height": 520,
+  "autosize": "none",
+  
+  "config": {
+    "legend": {
+    "gradientDirection": "horizontal",
+    "gradientLength": 120,
+    "gradientThickness": 10
+    }
   },
-  "mark": "bar",
-  "encoding": {
-    "x": {"field": "Date by Week", "type": "temporal", "axis": {"labelAngle": 0}},
-    "y": {"field": "Deaths", "type": "quantitative"}
-  }
+  
+  "data": [
+    {
+    "name": "states",
+    "url": "us-10m.json",
+    "format": {"type": "topojson", "feature": "states"}
+    },
+    {
+    "name": "deaths",
+    "url": "covid_state_deaths.json",
+    "transform": [
+      {
+      "type": "lookup",
+      "from": "states", "key": "id",
+      "fields": ["id"], "as": ["geo"]
+      },
+      {
+      "type": "filter",
+      "expr": "datum.geo"
+      },
+      {
+      "type": "formula", "as": "centroid",
+      "expr": "geoCentroid('projection', datum.geo)"
+      }
+    ]
+    }
+  ],
+  
+  "projections": [
+    {
+    "name": "projection",
+    "type": "albersUsa",
+    "scale": 1100,
+    "translate": [{"signal": "width / 2"}, {"signal": "height / 2"}]
+    }
+  ],
+  
+  "scales": [
+    {
+    "name": "size",
+    "domain": {"data": "deaths", "field": "deaths"},
+    "zero": false,
+    "range": [1000, 5000]
+    },
+    {
+    "name": "color",
+    "type": "linear",
+    "nice": true,
+    "domain": {"data": "deaths", "field": "deaths"},
+    "range": "ramp"
+    }
+  ],
+  
+  "legends": [
+    {
+    "title": "COVID-19 Deaths",
+    "orient": "bottom-right",
+    "type": "symbol",
+    "size": "size",
+    "fill": "color",
+    "format": "N",
+    "clipHeight": 16
+    }
+  ],
+  
+  "marks": [
+    {
+    "name": "circles",
+    "type": "symbol",
+    "from": {"data": "deaths"},
+    "encode": {
+      "enter": {
+      "size": {"scale": "size", "field": "deaths"},
+      "fill": {"scale": "color", "field": "deaths"},
+      "stroke": {"value": "white"},
+      "strokeWidth": {"value": 1.5},
+      "x": {"field": "centroid[0]"},
+      "y": {"field": "centroid[1]"},
+      "tooltip": {"signal": "'COVID-19 Deaths: ' + format(datum.deaths, 'N')"}
+      }
+    },
+    "transform": [
+      {
+      "type": "force",
+      "static": true,
+      "forces": [
+        {"force": "collide", "radius": {"expr": "1 + sqrt(datum.size) / 2"}},
+        {"force": "x", "x": "datum.centroid[0]"},
+        {"force": "y", "y": "datum.centroid[1]"}
+      ]
+      }
+    ]
+    },
+    {
+    "type": "text",
+    "interactive": false,
+    "from": {"data": "circles"},
+    "encode": {
+      "enter": {
+      "align": {"value": "center"},
+      "baseline": {"value": "middle"},
+      "fontSize": {"value": 13},
+      "fontWeight": {"value": "bold"},
+      "text": {"field": "datum.state"}
+      },
+      "update": {
+      "x": {"field": "x"},
+      "y": {"field": "y"}
+      }
+    }
+    }
+  ]
 }
