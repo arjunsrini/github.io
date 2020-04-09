@@ -21,11 +21,16 @@
 			} */
 		</style>
 
+		<!-- vega lite module embed -->
+		<script src="https://cdn.jsdelivr.net/npm/vega@5.10.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vega-lite@4.10.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vega-embed@6.5.2"></script>		
+
 		<!-- vega-embed module -->
-		<script src="https://vega.github.io/vega/vega.min.js"></script>
+		<!-- <script src="https://vega.github.io/vega/vega.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
 		<script src="https://cdn.jsdelivr.net/npm/vega-lite@4"></script>
-		<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+		<script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script> -->
 
 	</head>
 	<body class="is-preload">
@@ -76,14 +81,35 @@
 							<p></p>
 							<h2>Coronavirus Deaths by Date</h2>
 
-							<div id="view"></div>
-							<script>
-								vegaEmbed(
-								  '#view',
-								  'https://www.arjunsrini.github.io/data/visualization.vl.json'
-								  								
-								);
+							<div id="vis"></div>
+
+							<script type="text/javascript">
+							  var yourVlSpec = { 
+								"$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+								"description": "A simple bar chart with embedded data.",
+								"data": {
+									"values": [
+									{"Date by Week": "2/1", "Deaths": 0},
+									{"Date by Week": "2/8", "Deaths": 0},
+									{"Date by Week": "2/15", "Deaths": 0},
+									{"Date by Week": "2/22", "Deaths": 0},
+									{"Date by Week": "2/29", "Deaths": 5},
+									{"Date by Week": "3/7", "Deaths": 18},
+									{"Date by Week": "3/14", "Deaths": 43},
+									{"Date by Week": "3/21", "Deaths": 385},
+									{"Date by Week": "3/28", "Deaths": 1406},
+									{"Date by Week": "4/4", "Deaths": 1450}
+									]
+								},
+								"mark": "bar",
+								"encoding": {
+									"x": {"field": "Date by Week", "type": "temporal", "axis": {"labelAngle": 0}},
+									"y": {"field": "Deaths", "type": "quantitative"}
+								}								  
+							  };
+							  vegaEmbed('#vis', yourVlSpec);
 							</script>
+							
 							<figcaption><i>Source: <a href="https://data.cdc.gov/NCHS/Provisional-Death-Counts-for-Coronavirus-Disease-C/hc4f-j6nb">CDC</a>.</i></figcaption>
 
 							<p></p>
