@@ -1,0 +1,23 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v4.json",
+  "description": "A simple bar chart with embedded data.",
+  "data": {
+    "values": [
+      {"Date by Week": "2/1", "Deaths": 0},
+      {"Date by Week": "2/8", "Deaths": 0},
+      {"Date by Week": "2/15", "Deaths": 0},
+      {"Date by Week": "2/22", "Deaths": 0},
+      {"Date by Week": "2/29", "Deaths": 5},
+      {"Date by Week": "3/7", "Deaths": 18},
+      {"Date by Week": "3/14", "Deaths": 43},
+      {"Date by Week": "3/21", "Deaths": 385},
+      {"Date by Week": "3/28", "Deaths": 1406},
+      {"Date by Week": "4/4", "Deaths": 1450}
+    ]
+  },
+  "mark": "bar",
+  "encoding": {
+    "x": {"field": "Date by Week", "type": "temporal", "axis": {"labelAngle": 0}},
+    "y": {"field": "Deaths", "type": "quantitative"}
+  }
+}
