@@ -1,0 +1,38 @@
+baseURL = "https://arjunsrini.github.io"
+languageCode = "en-us"
+title = "Arjun Srinivasan"
+url = "/index"
+theme="archie"
+
+copyright = "© Arjun Srinivasan"
+pygmentsstyle = "monokai"
+pygmentscodefences = true
+pygmentscodefencesguesssyntax = true
+[params]
+	mode="auto"
+	featherIconsCDN=true
+
+[[params.social]]
+name = "GitHub"
+icon = "github"
+url = "https://github.com/arjunsrini"
+
+[[params.social]]
+name = "Twitter"
+icon = "twitter"
+url = "https://twitter.com/arjun_srinivasa/"
+
+[[menu.main]]
+name = "Home"
+url = "/"
+weight = 1
+
+[[menu.main]]
+name = "About"
+url = "/about"
+weight = 2
+
+[[menu.main]]
+name = "Resume"
+url = "/about"
+weight = 3
