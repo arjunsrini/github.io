@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tags on Arjun Srinivasan</title>
+    <link>https://arjunsrini.github.io/tags/</link>
+    <description>Recent content in Tags on Arjun Srinivasan</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© Arjun Srinivasan</copyright>
+    <lastBuildDate>Mon, 20 Apr 2020 02:01:58 +0530</lastBuildDate>
+    
+	<atom:link href="https://arjunsrini.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>play</title>
+      <link>https://arjunsrini.github.io/tags/play/</link>
+      <pubDate>Mon, 20 Apr 2020 02:01:58 +0530</pubDate>
+      
+      <guid>https://arjunsrini.github.io/tags/play/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>dartmouth</title>
+      <link>https://arjunsrini.github.io/tags/dartmouth/</link>
+      <pubDate>Sun, 19 Apr 2020 12:31:30 +0530</pubDate>
+      
+      <guid>https://arjunsrini.github.io/tags/dartmouth/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>work</title>
+      <link>https://arjunsrini.github.io/tags/work/</link>
+      <pubDate>Sun, 19 Apr 2020 12:31:30 +0530</pubDate>
+      
+      <guid>https://arjunsrini.github.io/tags/work/</guid>
+      <description></description>
+    </item>
+    
+  </channel>
+</rss>

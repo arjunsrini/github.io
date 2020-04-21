@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>work on Arjun Srinivasan</title>
+    <link>https://arjunsrini.github.io/tags/work/</link>
+    <description>Recent content in work on Arjun Srinivasan</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <copyright>© Arjun Srinivasan</copyright>
+    <lastBuildDate>Sun, 19 Apr 2020 12:31:30 +0530</lastBuildDate>
+    
+	<atom:link href="https://arjunsrini.github.io/tags/work/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Projects @ Dartmouth</title>
+      <link>https://arjunsrini.github.io/posts/dartmouth-projects/</link>
+      <pubDate>Sun, 19 Apr 2020 12:31:30 +0530</pubDate>
+      
+      <guid>https://arjunsrini.github.io/posts/dartmouth-projects/</guid>
+      <description>Google Patents Classification Economics RA for Professor Ethan G. Lewis
+I&amp;rsquo;m working on matching patent and industry electricity-use datasets.
+Maze Algorithm in C Class project for CS 50 (&amp;ldquo;Software Design and Implementation&amp;rdquo;).
+  Our algorithm solving an 8-player maze game   Along with Boxian Wang, Michael Canche, and Daniel Diaz, I wrote a program in C that communicates with a game server and implemenents our own maze game solving algorithm based on the Floyd-Warshall algorithm and Dijkstra&amp;rsquo;s algorithm.</description>
+    </item>
+    
+  </channel>
+</rss>

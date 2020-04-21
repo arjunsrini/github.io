@@ -1,0 +1,458 @@
+---
+title: "Final Project - Medicare PUF"
+author: "Arjun Srinivasan"
+date: "March 5, 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Medicare PUF Analysis
+
+## Research Question  
+
+The cost of social security programs is a persistent political hot topic in the United States; as national debt rises, politicians and citizens continue to question whether programs like Medicare and Medicaid are affordable. The affordability of these programs is an undoubtedly complex issue, including a vast body of research on administrative costs, drug prices, and payments to medical providers. This investigation looks at Medicare payments to providers using the Basic Stand Alone (BSA) Medicare Claims Public Use Files (PUFs), a 2010 dataset that contains information from Medicare Carrier claims, to infer the relationship between a variety of claim-related factors-from patient sex and age group to diagnoses to type of provider-and the cost of any given claim in the dataset.  
+
+Prior research on Medicare PUFs has found beneficiaries diagnosed with cancer-even without any other chronic conditions-cost five times more than beneficiaries with no chronic conditions (Prada 2014). Another study used Medicare PUFs to look at factors related to Alzheimer's disease (Prada 2013). This project is one similarly focused on inference and description, as I am interested in understanding a variety of potential relationships between a variety of factors and the costs of services.   
+
+## Research Design  
+
+To investigate this relationship, I will use a variety of different regressions-linear, ridge, and lasso-in addition to decision trees (pruned and unpruned). Before fitting the models, the dataset must undergo extensive modification in transforming all relevant categorical and multi-level factors into quantitative binary factors. Then, I will take two small samples (n = 20,000) from the large dataset (n = 70,052,393; for df1 loaded from .csv, n = 2,801,660) as training and test datasets.  
+
+## Project Setup
+```{r Project Setup}
+## I. Load packages.
+library(Matrix)
+library(glmnet)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(tree)
+
+## II. Import data into data frame.
+df1 <- read.csv("2010_BSA_Carrier_PUF.csv", header=TRUE, stringsAsFactors = FALSE)
+
+## Rename headers.
+names(df1) <- c("Sex", "Age_Group", "ICD9", "HCPCS_Service_Code", "BETOS_Service_Code", "Service_Count", "Provider", "Service_Type", "Place", "Cost", "Line_Item_Count")
+
+## Testing what dataset looks like.
+## summary(df1)
+## head(df1)
+
+## III. In creating data frame 2 (df2), the data frame used for model fitting, I will begin with a Cost column and add in the columns for Sex, Age, ICD9, HCPCS_Service_Code, BETOS_Service_Code, Service_Count, Provider, and Service_Type but with non-binary non-quantitative factors turned into multiple columns of binary quantitative factors.
+
+## For ICD9, create 20 binary variables representing the 20 different categories of diagnoses as shown in the Medicare PUF codebook. Add them to the dataframe after adding Cost and Sex columns.
+
+##Note: The first 45 observations have no ICD9.
+
+Infectious_dz <- c(rep(0,45), rep(1,5681-45), rep(0,2801660-5681))
+Neoplasms <- c(rep(0,5681), rep(1,22867-5681), rep(0,2801660-22867))
+Immunity_dz <- c(rep(0,22867), rep(1,35186-22867), rep(0,2801660-35186))
+Blood_dz <- c(rep(0,35186), rep(1,39893-35186), rep(0,2801660-39893))
+Mental_disorder <- c(rep(0,39893), rep(1,53448-39893), rep(0,2801660-53448))
+Nervous_dz <- c(rep(0,53448), rep(1,63342-53448), rep(0,2801660-63342))
+Sense_dz <- c(rep(0,63342), rep(1,71939-63342), rep(0,2801660-71939))
+Circulatory_dz <- c(rep(0,71939), rep(1,97895-71939), rep(0,2801660-97895))
+Respiratory_dz <-c(rep(0,97895), rep(1,111513-97895), rep(0,2801660-111513))
+Digestive_dz <-c(rep(0,111513), rep(1,127463-111513), rep(0,2801660-127463))
+Genitourinary_dz <-c(rep(0,127463), rep(1,140839-127463), rep(0,2801660-140839))
+Pregnancy_complic <-c(rep(0,140839), rep(1,140840-140839), rep(0,2801660-140840))
+Skin_dz <-c(rep(0,140840), rep(1,150355-140840), rep(0,2801660-150355))
+Musculoskeletal_dz <-c(rep(0,150355), rep(1,180065-150355), rep(0,2801660-180065))
+Congenital_anom <-c(rep(0,180065), rep(1,181323-180065), rep(0,2801660-181323))
+Perinatal_condit <-c(rep(0,181323), rep(1,181336-181323), rep(0,2801660-181336))
+Ill_defined_condit <-c(rep(0,181336), rep(1,208063-181336), rep(0,2801660-208063))
+Injury_Poison <-c(rep(0,208063), rep(1,228985-208063), rep(0,2801660-228985))
+External_Cz_of_Inj <-c(rep(0,228985), rep(1,229008-228985), rep(0,2801660-229008))
+Fact_Inf_Hlth_Srvc <-c(rep(0,229008), rep(1,2801660-229008))
+
+df.ICD9 <- cbind.data.frame(Infectious_dz, Neoplasms, Immunity_dz, Blood_dz, Mental_disorder, Nervous_dz, Sense_dz, Circulatory_dz, Respiratory_dz, Digestive_dz, Genitourinary_dz, Pregnancy_complic, Skin_dz, Musculoskeletal_dz, Congenital_anom, Perinatal_condit, Ill_defined_condit, Injury_Poison, External_Cz_of_Inj, Fact_Inf_Hlth_Srvc)
+
+df2 <- cbind.data.frame(df1$Cost, df1$Sex, df.ICD9)
+colnames(df2)[1] <- "Cost"
+colnames(df2)[2] <- "Sex"
+
+## For HCPCS_Service_Code, create 7 binary variables for the 10 most frequent HCPCS as shown in the codebook (for 3 pairs of the top 10 codes, both codes in a pair corresponded to the same service).
+
+## 99213, 99214 = Established Patient Office or Other Outpatient Services
+EPOOS <- rep(0,2801660)
+## 36415 = Venous Procedures
+Venous <- rep(0,2801660)
+## 99232 = Subsequent Hospital Care
+Hosp_Care <- rep(0,2801660)
+## 85025, 85610 = Hematology and Coagulation Procedures
+Hematology <- rep(0,2801660)
+## 80053, 80061 = Organ or Disease Oriented Panels
+Organ_Dz_Pnl <- rep(0,2801660)
+## 97110 = Physical Medicine and Rehabilitation Therapeutic Procedures
+Phys_Med_Rhb <- rep(0,2801660)
+## The last category in the codebook is 'all other values'.
+Other_Service <- rep(0,2801660)
+
+for(i in 1:2801660){
+  if(df1[i,4] == '99213' || df1[i,4] == '99214'){
+    EPOOS[i] <- 1
+  }
+  else if(df1[i,4] == '36415'){
+    Venous[i] <- 1
+  }
+  else if(df1[i,4] == '99232'){
+    Hosp_Care[i] <- 1
+  }
+  else if(df1[i,4] == '85025' || df1[i,4] == '85610'){
+    Hematology[i] <- 1
+  }
+  else if(df1[i,4] == '80053' || df1[i,4] == '80061'){
+    Organ_Dz_Pnl[i] <- 1
+  }
+  else if(df1[i,4] == '97110'){
+    Phys_Med_Rhb[i] <- 1
+  }
+  else{
+    Other_Service[i] <- 1
+  }
+}
+
+df.HCPCS <- cbind.data.frame(EPOOS, Venous, Hosp_Care, Hematology, Organ_Dz_Pnl, Phys_Med_Rhb, Other_Service)
+
+df2 <- cbind.data.frame(df2, df.HCPCS)
+
+## For BETOS_Service_Code, create 10 binary variables for the 10 most frequent BETOS codes. 
+
+## M1B = Office Visit
+Ofc_Vst <- rep(0,2801660)
+## T1H = Lab Test - Other/Non-Medicare Fee Schedule
+LbTst_Othr <- rep(0,2801660)
+## M2B = Hospital Visit - Subsequent
+Hosp_Vst <- rep(0,2801660)
+## P6C = Minor Procedures
+Mnr_Pcdr <- rep(0,2801660)
+## T1A = Lab Test - Venipuncture
+LbTst_Vnpctr <- rep(0,2801660)
+## T1B = Lab Test - Automated General Profiles
+LbTst_AGP <- rep(0,2801660)
+## I1A = Standard Imaging - Chest
+Chest_Img <- rep(0,2801660)
+## M5C = Specialist - Opthamology
+Opthmlgy <- rep(0,2801660)
+## T1D = Lab Test - Blood Count
+LbTst_BldCt <- rep(0,2801660)
+## T2A = Other Tests - Electrocardiograms
+ECG <- rep(0,2801660)
+## All other values
+Other_BETOS <- rep(0,2801660)
+
+for(i in 1:2801660){
+  if(df1[i,5] == 'M1B'){
+    Ofc_Vst[i] <- 1
+  }
+  else if(df1[i,5] == 'T1H'){
+    LbTst_Othr[i] <- 1
+  }
+  else if(df1[i,5] == 'M2B'){
+    Hosp_Vst[i] <- 1
+  }
+  else if(df1[i,5] == 'P6C'){
+    Mnr_Pcdr[i] <- 1
+  }
+  else if(df1[i,5] == 'T1A'){
+    LbTst_Vnpctr[i] <- 1
+  }
+  else if(df1[i,5] == 'T1B'){
+    LbTst_AGP[i] <- 1
+  }
+  else if(df1[i,5] == 'I1A'){
+    Chest_Img[i] <- 1
+  }
+  else if(df1[i,5] == 'M5C'){
+    Opthmlgy[i] <- 1
+  }
+  else if(df1[i,5] == 'T1D'){
+    LbTst_BldCt[i] <- 1
+  }  
+  else if(df1[i,5] == 'T2A'){
+    ECG[i] <- 1
+  }    
+  else{
+    Other_BETOS[i] <- 1
+  }
+}
+
+df.BETOS <- cbind.data.frame(Ofc_Vst, LbTst_Othr, Hosp_Vst, Mnr_Pcdr, LbTst_Vnpctr, LbTst_AGP, Chest_Img, Opthmlgy, LbTst_BldCt, ECG, Other_BETOS)
+
+df2 <- cbind.data.frame(df2, df.BETOS)
+
+## For Provider type, create 5 binary variables for the 5 distinct types of providers in the PUF.
+
+Clinic <- rep(0,2801660)
+Solo <- rep(0,2801660)
+Institutional <- rep(0,2801660)
+Clinic_Mult_Specialties <- rep(0,2801660)
+Other_Provider <- rep(0,2801660)
+
+for(i in 1:2801660){
+  if(df1[i,7] == 0){
+    Clinic[i] <- 1
+  }
+  else if(df1[i,7] == 1){
+    Solo[i] <- 1
+  }
+  else if(df1[i,7] == 3){
+    Institutional[i] <- 1
+  }
+  else if(df1[i,7] == 5){
+    Clinic_Mult_Specialties[i] <- 1
+  }
+  else{
+    Other_Provider[i] <- 1
+  }
+}
+
+df.Provider <- cbind.data.frame(Clinic, Solo, Institutional, Clinic_Mult_Specialties, Other_Provider)
+df2 <- cbind.data.frame(df2, df.Provider)
+
+## Add service count.
+
+df2 <- cbind.data.frame(df2, df1$Service_Count)
+colnames(df2)[46] <- "Service_Count"
+
+## For Service code, create 20 binary variables for the 20 types of services in the PUF codebook.
+
+Med_care <- rep(0,2801660)
+Diag_lab <- rep(0,2801660)
+Diag_radiol <- rep(0,2801660)
+Surgery <- rep(0,2801660)
+Flu_vacc <- rep(0,2801660)
+Ambulance <- rep(0,2801660)
+Outpatient_MH <- rep(0,2801660)
+Vision <- rep(0,2801660)
+Anesthesia <- rep(0,2801660)
+Thrp_radiol <- rep(0,2801660)
+Ambul_surg_cntr <- rep(0,2801660)
+Hearing <- rep(0,2801660)
+Asst_at_surg <- rep(0,2801660)
+Other_med_itm <- rep(0,2801660)
+Consultation <- rep(0,2801660)
+Prosthtc_Orthtc <- rep(0,2801660)
+Med_supply <- rep(0,2801660)
+Imnsprsv_drg <- rep(0,2801660)
+Kidney_dnr <- rep(0,2801660)
+Whole_bld <- rep(0,2801660)
+
+for(i in 1:2801660){
+  if(df1[i,8] == '1'){
+    Med_care[i] <- 1
+  }
+  else if(df1[i,8] == '5'){
+    Diag_lab[i] <- 1
+  }
+  else if(df1[i,8] == '4'){
+    Diag_radiol[i] <- 1
+  }
+  else if(df1[i,8] == '2'){
+    Surgery[i] <- 1
+  }
+  else if(df1[i,8] == 'V'){
+    Flu_vacc[i] <- 1
+  }
+  else if(df1[i,8] == 'D'){
+    Ambulance[i] <- 1
+  }
+  else if(df1[i,8] == 'T'){
+    Outpatient_MH[i] <- 1
+  }
+  else if(df1[i,8] == 'Q'){
+    Vision[i] <- 1
+  }
+  else if(df1[i,8] == '7'){
+    Anesthesia[i] <- 1
+  }  
+  else if(df1[i,8] == '6'){
+    Thrp_radiol[i] <- 1
+  }
+  else if(df1[i,8] == 'F'){
+    Ambul_surg_cntr[i] <- 1
+  }
+  else if(df1[i,8] == 'K'){
+    Hearing[i] <- 1
+  }
+  else if(df1[i,8] == '8'){
+    Asst_at_surg[i] <- 1
+  }
+  else if(df1[i,8] == '9'){
+    Other_med_itm[i] <- 1
+  }
+  else if(df1[i,8] == '3'){
+    Consultation[i] <- 1
+  }
+  else if(df1[i,8] == 'P'){
+    Prosthtc_Orthtc[i] <- 1
+  }
+  else if(df1[i,8] == 'S'){
+    Med_supply[i] <- 1
+  }
+  else if(df1[i,8] == 'G'){
+    Imnsprsv_drg[i] <- 1
+  }
+  else if(df1[i,8] == 'N'){
+    Kidney_dnr[i] <- 1
+  }
+  else if(df1[i,8] == '0'){
+    Whole_bld[i] <- 1
+  }
+}
+
+df.ServiceCd <- cbind.data.frame(Med_care, Diag_lab, Diag_radiol, Surgery, Flu_vacc, Ambulance, Outpatient_MH, Vision, Anesthesia, Thrp_radiol, Ambul_surg_cntr, Hearing, Asst_at_surg, Other_med_itm, Consultation, Prosthtc_Orthtc, Med_supply, Imnsprsv_drg, Kidney_dnr, Whole_bld)
+
+df2 <- cbind.data.frame(df2, df.ServiceCd)
+
+## Finally add age.
+
+df2 <- cbind.data.frame(df2, df1$Age_Group)
+colnames(df2)[67] <- "Age_Group"
+
+
+## Get 2 random samples of 20,000 observations.
+
+set.seed(1)
+ind <- seq(from = 1, to = 2801660)
+ind2 <- sample(ind, size = 20000, replace = FALSE)
+
+df2.sample <- df2[ind2,]
+df2.nonsample <- df2[-ind2,]
+
+ind3 <- seq(from = 1, to = 2781660)
+ind4 <- sample(ind3, size = 20000, replace = FALSE)
+df2.validset <- df2[ind4,]
+
+summary(df2)
+```
+
+## Describing the Data 
+
+Given the complexity and quantity of the variables in the dataset, it is difficult to immediately recognize patterns in the dataset. A summary of the data frame (df2) shows the distributions of relevant variables, most of which are between 0 and 1 since they represent binary factors. Interesting associations between variables can be seen later in the regression stage of this investigation.
+
+There are 66 non-cost variables in the dataset, which fall into 10 broad groups of variables: sex of the beneficiary, beneficiary age group at the year 2010, the beneficiary's International Classification of Diseases, Ninth Revision, Clinical Modification (ICD 9) diagnosis, the provider type, the number of services processed per line item on the carrier claim, the type of service, the place of service, the payment made for the line item, the Healthcare Common Procedure Coding System (HCPCS) codes which identify items and services, and the Berenson-Eggers Type of Service (BETOS) code for the line item based on generally agreed upon clinically meaningful groupings of procedures and services.
+
+While clustering likely will not reveal much of interest due to variable complexity (no clear binary variable is likely strongly related to cost, and if so, finding which one requires doing the modeling portion of this investigation first), a cluster of 2 excluding sex to see whether claims of different sexes are significantly distinct may be of interest. Interestingly enough, the clusters produce very similar sex ratios, possibly suggesting that sex is a relatively uninportant parameter of interest in the first split of the dataset.
+
+## Clustering
+```{r Clustering}
+
+## cluster using dataset exlucding sex
+df3 <- df2.sample[,-2]
+clst <- kmeans(df3, centers = 2)
+
+## counters for number of obs in each cluster
+ct1 <- 0
+ct2 <- 0
+
+## counters for number of spam in each cluster
+ct3 <- 0
+ct4 <- 0
+
+## check which cluster and if spam for each obs. count up.
+for(i in 1:20000){
+  if(clst$cluster[i] == 1){
+    ct1 <- ct1 + 1
+    if(df2.sample$Sex[i] == 1){
+      ct3 <- ct3 + 1
+    }
+  }
+  else{
+    ct2 <- ct2 + 1
+    if(df2.sample$Sex[i] == 1){
+      ct4 <- ct4 + 1
+    }
+  }
+}
+
+## calculate and output percentages
+pct1 <- ct3/ct1
+pct2 <- ct4/ct2
+pct1
+pct2
+
+```
+
+## Cost Models
+```{r Cost Models}
+
+## I. Linear Regression
+## First, regress on all factors.
+mod1 <- glm(Cost ~ ., family = gaussian, data = df2.sample)
+summary(mod1)
+
+## Second, regress on factors that were significantly related (at the highest level of significance) to Cost in the first regression.
+mod2 <- glm(Cost ~ Venous+Ofc_Vst+LbTst_Othr+Mnr_Pcdr+LbTst_AGP+Chest_Img+ECG+
+              Service_Count+Surgery+Ambul_surg_cntr, family = gaussian, data = df2.sample)
+summary(mod2)
+
+## II. Ridge Regression
+x1 <- as.matrix(df2.sample[,2:67])
+y1 <- df2.sample$Cost
+cv.ridge1 <- cv.glmnet(x1, y1, alpha=0)
+fit.ridge1 <- glmnet(x1, y1, alpha=0)
+## plot(fit.ridge1, xvar="lambda", label=T)
+## plot(cv.ridge1)
+
+## III. Lasso Regression
+fit.lasso1 <- glmnet(x1, y1, alpha=1)
+plot(fit.lasso1, xvar="lambda", label=T)
+
+cv.lasso1 <- cv.glmnet(x1, y1, alpha=1)
+plot(cv.lasso1)
+coef(cv.lasso1)
+
+## IV. Decision Trees
+cost_tree <- tree(Cost ~ ., data=df2.sample)
+plot(cost_tree);text(cost_tree, pretty = 1)
+
+cv.cost_tree <- cv.tree(cost_tree)
+cv.cost_tree
+
+prune.cost_tree <- prune.tree(cost_tree, best = 6)
+plot(prune.cost_tree);text(prune.cost_tree, pretty = 1)
+
+```
+
+```{r Validation Set}
+## Below, each model makes predictions based on the validation set, and then mean squared errors for each model tested on validation set are calculated and placed in a data frame.
+mod1pred <- predict(mod1, df2.validset)
+mse1 <- mean((df2.validset$Cost-mod1pred)[1:20000]^2)
+
+mod2pred <- predict(mod2, df2.validset)
+mse2 <- mean((df2.validset$Cost-mod2pred)[1:20000]^2)
+
+ridge_pred <- predict(fit.ridge1, s=cv.ridge1$lambda.min, newx=as.matrix(df2.validset[,2:67]))
+mse3 <- mean((df2.validset$Cost-ridge_pred)[1:20000]^2)
+
+lasso_pred <- predict(fit.lasso1, cv.lasso1$lambda.min, newx=as.matrix(df2.validset[,2:67]))
+mse4 <- mean((df2.validset$Cost-lasso_pred)[1:20000]^2)
+
+tree_pred <- predict(cost_tree, df2.validset)
+mse5 <- mean((df2.validset$Cost-tree_pred)[1:20000]^2)
+
+prune_tree_pred <- predict(prune.cost_tree, df2.validset)
+mse6 <- mean((df2.validset$Cost-prune_tree_pred)[1:20000]^2)
+
+mean_vec <- rep(mean(df2.sample$Cost), 20000)
+mse7 <- mean((df2.validset$Cost-mean_vec)[1:20000]^2)
+
+df.mse <- data.frame(mse1, mse2, mse3, mse4, mse5, mse6, mse7)
+names(df.mse) <- c("Linear Regression - All Variables","Linear Regression - Significant Variables", "Ridge Regression", "Lasso Regression", "Tree", "Pruned Tree", "Guess Average Cost")
+df.mse
+
+```
+
+## Results and Conclusion
+
+I created six models to infer the relationship between a given Medicare claim's cost and a variety of factors related to said claim. The first model linearly regressed Cost on all 66 factors in the data frame, while the second linearly regression Cost on the 10 factors which were significantly related to Cost in the first regression (at the most stringent level of significance - ***). The third model used cross-validation to fit a ridge regression that minimized mean squared error, while the fourth model used cross-validation to fit a lasso regression that minimized mean squared error. Finally, the fifth model created a basic tree and the sixth pruned said tree using cross-validation.
+
+The first model included all features possible, while the second selected features that I knew were likely to be related to Cost given the output of the first model. The third model also used all features possible, whil the fourth performed an automatic form of feature selection through the lasso penalty. The tree models also selected relevant features for me by choosing what features created optimal splits. Feature selection was therefore either a choice made by the machine learning tool or a choice to include all features as to best predict Cost; both options attempt to best understand the relationship between the factors and Cost, and are consistent with my research goal.
+
+The above dataframe shows that both trees - which were equivalent since the pruned tree did not remove any nodes from the basic tree - had the lowest mean squared error. Those trees show that the factors of whether the claim's type of service was surgery, whether the service count was greater than 29.5, whether type of service was medical care (if not surgery), whether the type of service was facility usage of an ambulatory surgical center, and whether the Berenson-Eggers Type of Service code was not one of the 9 most frequent codes (i.e. was label Other_BETOS) were the most determinative factors in inferring the cost of a claim. Comparing the last mean squared error (mse7) to the mse of the trees shows that trees moderately improve modeling of the relationship between a claim's cost and other factors compared to simply guessing the cost to be the mean of the claims' costs in the sample set. 
+
+One can conclude from this analysis that important and interpretable focal points for reducing the incidence of especially high cost Medicare claims include the costs and usage of ambulatory surgical centers and costs and incidence of surgery. These two factors have a significant relationship with Medicare claim cost that merits public policy attention for understand one facet of what may make Medicare costly.
