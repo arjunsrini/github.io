@@ -21,7 +21,7 @@ sass:
   style: compressed
 
 # Theme settings
-theme_mode: markdown  # choices are: 'dark', 'standard', 'markdown'
+theme_mode: standard  # choices are: 'dark', 'standard', 'markdown'
 
 # Customizations
 # your_name: arjun srinivasan
@@ -33,7 +33,7 @@ navigation:
   - text: Resume
     url: /
   - text: Projects @ Dartmouth
-    url: /dartmouth-projects
+    url: /dartmouth-projects.html
 
 # projects:
   # - name: git-secret
