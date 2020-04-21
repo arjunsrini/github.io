@@ -7,8 +7,8 @@
 
 # Site settings
 title: arjun srinivasan
-description: > # this means to ignore newlines until "baseurl:"
-  my personal website
+# description: > # this means to ignore newlines until "baseurl:"
+#   my personal website
 #repository: https://github.com/wemake-services/jekyll-theme-hackcss
 baseurl:  # the subpath of your site, e.g. /blog
 url: https://arjunsrini.github.io  # the base hostname & protocol for your site
@@ -24,8 +24,8 @@ sass:
 theme_mode: markdown  # choices are: 'dark', 'standard', 'markdown'
 
 # Customizations
-your_name: arjun srinivasan
-email: arjunsrinivasan@protonmail.com
+# your_name: arjun srinivasan
+# email: arjunsrinivasan@protonmail.com
 
 navigation:
   - text: Home
@@ -35,7 +35,7 @@ navigation:
   - text: Projects @ Dartmouth
     url: /dartmouth-projects
 
-projects:
+# projects:
   # - name: git-secret
   #   description: A bash-tool to store your private data inside a git repository.
   #   link: https://sobolevn.github.io/git-secret
@@ -51,7 +51,7 @@ projects:
   #   description: Organize Django settings into multiple files and directories. Easily override and modify settings. Use wildcards and optional settings files.
   #   link: https://github.com/sobolevn/django-split-settings
 
-social:
+# social:
   # - service: github
   #   username: sobolevn
   #   link: https://github.com/sobolevn
